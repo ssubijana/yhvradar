@@ -2,6 +2,7 @@ package com.seedtag.yhvradar.service;
 
 import com.seedtag.yhvradar.domain.EnemyType;
 import com.seedtag.yhvradar.domain.Protocol;
+import com.seedtag.yhvradar.manager.*;
 import com.seedtag.yhvradar.web.presentation.EnemyPresentation;
 import com.seedtag.yhvradar.web.presentation.PoiPresentation;
 import com.seedtag.yhvradar.web.presentation.PossitionPresentation;
@@ -13,6 +14,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,22 +25,7 @@ import static org.mockito.Mockito.when;
 public class RadarServiceImplTest {
 
     @Mock
-    private ClosestEnemiesProtocolManager closestEnemiesProtocolManager;
-
-    @Mock
-    private FurthestEnemiesProtocolManager furthestEnemiesProtocolManager;
-
-    @Mock
-    private AssistAlliesProtocolManager assitAlliesProtocolManager;
-
-    @Mock
-    private AvoidCrossFireProtocolManager avoidCrossFireProtocolManager;
-
-    @Mock
-    private PriorMechProtocolManager priorMechProtocolManager;
-
-    @Mock
-    private AvoidMechProtocolManager avoidMechProtocolManager;
+    private ProtocolRuleEngine ruleEngine;
 
     @InjectMocks
     private RadarService radarService = new RadarServiceImpl();
@@ -67,7 +55,6 @@ public class RadarServiceImplTest {
         PoiPresentation poi4 = PoiPresentation.builder().coordinates(PossitionPresentation.builder().x(1).y(4000).build()).enemies(EnemyPresentation.builder().number(0).type(EnemyType.MECH).build()).build();
         List<PoiPresentation> pointsToPrior = Arrays.asList(poi1, poi2, poi3);
         List<PoiPresentation> filteredPointsToPrior = Arrays.asList(poi1, poi2);
-        List<PoiPresentation> filteredPointsClosest = Arrays.asList(poi1, poi2);
 
 
         List<PoiPresentation> points = Arrays.asList(poi1, poi2, poi3, poi4);
@@ -76,8 +63,7 @@ public class RadarServiceImplTest {
         ScanPresentation scanData = ScanPresentation.builder().protocols(protocols).scan(points).build();
 
 
-        when(priorMechProtocolManager.applyProtocol(pointsToPrior)).thenReturn(filteredPointsToPrior);
-        when(closestEnemiesProtocolManager.applyProtocol(filteredPointsToPrior)).thenReturn(filteredPointsClosest);
+        when(ruleEngine.run(protocols, pointsToPrior)).thenReturn(filteredPointsToPrior);
 
 
         PossitionPresentation pointToAttack = radarService.findPointToAttack(scanData);

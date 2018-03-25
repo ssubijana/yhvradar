@@ -1,21 +1,37 @@
-package com.seedtag.yhvradar.service;
+package com.seedtag.yhvradar.manager;
 
 import com.seedtag.yhvradar.domain.EnemyType;
+import com.seedtag.yhvradar.domain.Protocol;
+import com.seedtag.yhvradar.manager.AssistAlliesProtocolManager;
 import com.seedtag.yhvradar.web.presentation.EnemyPresentation;
 import com.seedtag.yhvradar.web.presentation.PoiPresentation;
 import com.seedtag.yhvradar.web.presentation.PossitionPresentation;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
+@RunWith(MockitoJUnitRunner.class)
 public class AssistAlliesProtocolManagerTest {
 
-    private AssistAlliesProtocolManager protocolManager = new AssistAlliesProtocolManager();
+    @Mock
+    private AvoidCrossFireProtocolManager nextProtocolManager;
 
+    private AssistAlliesProtocolManager protocolManager;
+
+    @Before
+    public void initData() {
+        protocolManager = new AssistAlliesProtocolManager(nextProtocolManager);
+    }
 
     @Test
     public void shouldReturnPointsWhereNotAlliesAre() {
@@ -55,5 +71,28 @@ public class AssistAlliesProtocolManagerTest {
 
         return points;
 
+    }
+
+    @Test
+    public void shouldRunNextProtocol() {
+        List<PoiPresentation> points = createWithAllies();
+
+        protocolManager.run(Protocol.AVOIDMECH, points);
+
+        verify(nextProtocolManager).run(Protocol.AVOIDMECH, points);
+    }
+
+    @Test
+    public void shouldApplyProtocolAndFilterPoints() {
+        List<PoiPresentation> points = protocolManager.run(Protocol.ASSISTALLIES, createWithAllies());
+        assertThat(points).hasSize(2);
+        verify(nextProtocolManager, never()).run(any(), any());
+    }
+
+    @Test
+    public void shouldApplyProtocolAndNotFilterPoints() {
+        List<PoiPresentation> points = protocolManager.run(Protocol.ASSISTALLIES, createWithoutAllies());
+        assertThat(points).hasSize(3);
+        verify(nextProtocolManager, never()).run(any(), any());
     }
 }

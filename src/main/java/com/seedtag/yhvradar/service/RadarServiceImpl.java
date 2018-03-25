@@ -1,6 +1,7 @@
 package com.seedtag.yhvradar.service;
 
 import com.seedtag.yhvradar.domain.Protocol;
+import com.seedtag.yhvradar.manager.*;
 import com.seedtag.yhvradar.utils.PointsUtils;
 import com.seedtag.yhvradar.web.presentation.PoiPresentation;
 import com.seedtag.yhvradar.web.presentation.PossitionPresentation;
@@ -15,22 +16,7 @@ import java.util.stream.Collectors;
 public class RadarServiceImpl implements RadarService {
 
     @Autowired
-    private ClosestEnemiesProtocolManager closestEnemiesProtocolManager;
-
-    @Autowired
-    private FurthestEnemiesProtocolManager furthestEnemiesProtocolManager;
-
-    @Autowired
-    private AssistAlliesProtocolManager assitAlliesProtocolManager;
-
-    @Autowired
-    private AvoidCrossFireProtocolManager avoidCrossFireProtocolManager;
-
-    @Autowired
-    private PriorMechProtocolManager priorMechProtocolManager;
-
-    @Autowired
-    private AvoidMechProtocolManager avoidMechProtocolManager;
+    private ProtocolRuleEngine ruleEngine;
 
 
     @Override
@@ -45,41 +31,10 @@ public class RadarServiceImpl implements RadarService {
                 return null;
             }
 
-            //2- Apply protocols
-            for (Protocol protocol :
-                    scanData.getProtocols()) {
+            List<PoiPresentation> filteredPoints = ruleEngine.run(scanData.getProtocols(), closestPoints);
 
-                List<PoiPresentation> filteredPoints;
-                switch (protocol) {
-                    case CLOSEST:
-                        filteredPoints = closestEnemiesProtocolManager.applyProtocol(closestPoints);
-                        break;
-                    case FURTHEST:
-                        filteredPoints = furthestEnemiesProtocolManager.applyProtocol(closestPoints);
-                        break;
-                    case ASSISTALLIES:
-                        filteredPoints = assitAlliesProtocolManager.applyProtocol(closestPoints);
-                        break;
-                    case AVOIDCROSSFIRE:
-                        filteredPoints = avoidCrossFireProtocolManager.applyProtocol(closestPoints);
-                        break;
-                    case PRIORMECH:
-                        filteredPoints = priorMechProtocolManager.applyProtocol(closestPoints);
-                        break;
-                    case AVOIDMECH:
-                        filteredPoints = avoidMechProtocolManager.applyProtocol(closestPoints);
-                        break;
-                    default:
-                        filteredPoints = null;
-                        break;
-                }
-
-                if (filteredPoints != null && !filteredPoints.isEmpty()) {
-                    closestPoints = filteredPoints;
-                }
-            }
             //Return first point
-            return closestPoints.get(0).getCoordinates();
+            return filteredPoints.get(0).getCoordinates();
         }
 
         return null;

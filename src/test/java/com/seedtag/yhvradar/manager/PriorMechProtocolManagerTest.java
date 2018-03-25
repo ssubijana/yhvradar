@@ -1,20 +1,36 @@
-package com.seedtag.yhvradar.service;
+package com.seedtag.yhvradar.manager;
 
 import com.seedtag.yhvradar.domain.EnemyType;
+import com.seedtag.yhvradar.domain.Protocol;
+import com.seedtag.yhvradar.manager.PriorMechProtocolManager;
 import com.seedtag.yhvradar.web.presentation.EnemyPresentation;
 import com.seedtag.yhvradar.web.presentation.PoiPresentation;
 import com.seedtag.yhvradar.web.presentation.PossitionPresentation;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
+@RunWith(MockitoJUnitRunner.class)
 public class PriorMechProtocolManagerTest {
+    @Mock
+    private AssistAlliesProtocolManager nextProtocolManager;
 
-    private PriorMechProtocolManager protocolManager = new PriorMechProtocolManager();
+    private PriorMechProtocolManager protocolManager;
 
+    @Before
+    public void initData() {
+        protocolManager = new PriorMechProtocolManager(nextProtocolManager);
+    }
 
     @Test
     public void shouldReturnPointsWhereMechAre() {
@@ -57,5 +73,28 @@ public class PriorMechProtocolManagerTest {
 
         return points;
 
+    }
+
+    @Test
+    public void shouldRunNextProtocol() {
+        List<PoiPresentation> points = createWithMechs();
+
+        protocolManager.run(Protocol.ASSISTALLIES, points);
+
+        verify(nextProtocolManager).run(Protocol.ASSISTALLIES, points);
+    }
+
+    @Test
+    public void shouldApplyProtocolAndFilterPoints() {
+        List<PoiPresentation> points = protocolManager.run(Protocol.PRIORMECH, createWithMechs());
+        assertThat(points).hasSize(2);
+        verify(nextProtocolManager, never()).run(any(), any());
+    }
+
+    @Test
+    public void shouldApplyProtocolAndNotFilterPoints() {
+        List<PoiPresentation> points = protocolManager.run(Protocol.PRIORMECH, createWithoutMechs());
+        assertThat(points).hasSize(3);
+        verify(nextProtocolManager, never()).run(any(), any());
     }
 }
